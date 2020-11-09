@@ -18,14 +18,14 @@ class ThreadQueue(): # queue implemented with python list
         self.full = threading.Semaphore(0)
         self.empty = threading.Semaphore(24)
 
-    def put(self, item):
+    def put(self, item): # enqueue
         self.empty.acquire()
         self.lock.acquire()
         self.queue.append(item)
         self.lock.release()
         self.full.release()
 
-    def obtain(self):
+    def obtain(self): # dequeue
         self.full.acquire()
         self.lock.acquire()
         item = self.queue.pop(0)
@@ -33,15 +33,15 @@ class ThreadQueue(): # queue implemented with python list
         self.empty.release()
         return item
 
-
-# based on extractFrames.py
+# based on extractFrames.py demo
 def extractFrames(fileName, frameQueue):
+    # check for null values
     if fileName is None:
         raise TypeError
     if frameQueue is None:
         raise TypeError
 
-    count = 0 #initialize frame count
+    count = 0 # initialize frame count
 
     vidcap = cv2.VideoCapture(fileName)
 
@@ -60,6 +60,30 @@ def extractFrames(fileName, frameQueue):
     print('Finished extracting frames');
     frameQueue.put(DELIMITER)
 
+# based on convertGrayscale.py demo
+def convertGrayscale(colorFrames, grayFrames):
+    # check for null values
+    if colorFrames is None:
+        raise TypeError
+    if grayFrames is None:
+        raise TypeError
+
+    count = 0 # initialize frame count
+
+    colorFrame = colorFrames.obtain() # get first color frame from colorFrames
+
+    while colorFrame is not DELIMITER:
+        print(f'Converting frame {count}')
+
+        # convert the image to grayscale
+        grayFrame = cv2.cvtColor(colorFrame, cv2.COLOR_BGR2GRAY)
+        grayFrames.put(grayFrame) # enqueue frame into the queue
+        count += 1
+        colorFrame = colorFrames.obtain() # dequeue next color frame
+
+    print('Conversion to grayscale complete')
+    grayFrames.put(DELIMITER)
+
 if __name__ == "__main__":
 
     colorFrames = ThreadQueue()
@@ -68,5 +92,7 @@ if __name__ == "__main__":
     # three functions needed: extract frames, convert frames to grayscale,
     # and display frames at original framerate (24fps)
     extract = threading.Thread(target = extractFrames, args = (VIDEOFILE, colorFrames))
+    convert = threading.Thread(target = convertGrayscale, args = (colorFrames, grayFrames))
 
     extract.start()
+    convert.start()
