@@ -7,9 +7,9 @@
 
 import cv2
 import threading
-from ThreadQueue import ThreadQueue
+from ThreadQueue import ThreadQueue # separated ThreadQueue class for modularization
 
-VIDEOFILE = "../clip.mp4"
+VIDEOFILE = "../clip.mp4" # video clip path
 DELIMITER = "\0"
 FRAMEDELAY = 42 # the answer to everything, as said in the demos
 
@@ -78,7 +78,7 @@ def displayFrames(frames):
         # display the image in a window call "video"
         cv2.imshow('Video Play', frame)
 
-        # wait 42ms (what was used in the demos) and check if the user wants to quit
+        # wait 42ms (what was used in the demos) and check if the user wants to quit with (q)
         if cv2.waitKey(FRAMEDELAY) and 0xFF == ord("q"):
             break
 
@@ -95,11 +95,11 @@ if __name__ == "__main__":
 
     # three functions needed: extract frames, convert frames to grayscale,
     # and display frames at original framerate (24fps)
-    extract = threading.Thread(target = extractFrames, args = (VIDEOFILE, colorFrames))
-    convert = threading.Thread(target = convertGrayscale, args = (colorFrames, grayFrames))
-    display = threading.Thread(target = displayFrames, args = (grayFrames,)) # <- needed to suppress error
+    extractThread = threading.Thread(target = extractFrames, args = (VIDEOFILE, colorFrames))
+    convertThread = threading.Thread(target = convertGrayscale, args = (colorFrames, grayFrames))
+    displayThread = threading.Thread(target = displayFrames, args = (grayFrames,)) # <- needed to suppress error
 
     # start threads
-    extract.start()
-    convert.start()
-    display.start()
+    extractThread.start()
+    convertThread.start()
+    displayThread.start()
