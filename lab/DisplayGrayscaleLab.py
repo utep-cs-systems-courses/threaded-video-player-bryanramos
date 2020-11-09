@@ -10,6 +10,7 @@ import threading
 
 VIDEOFILE = "../clip.mp4"
 DELIMITER = "\0"
+FRAMEDELAY = 42 # the answer to everything, as said in the demos
 
 class ThreadQueue(): # queue implemented with python list
     def __init__(self):
@@ -57,7 +58,7 @@ def extractFrames(fileName, frameQueue):
         print(f'Reading frame {count} {success}')
         count += 1
 
-    print('Finished extracting frames');
+    print('Finished extracting frames'); # signals that its done as per requirement
     frameQueue.put(DELIMITER)
 
 # based on convertGrayscale.py demo
@@ -81,8 +82,32 @@ def convertGrayscale(colorFrames, grayFrames):
         count += 1
         colorFrame = colorFrames.obtain() # dequeue next color frame
 
-    print('Conversion to grayscale complete')
+    print('Conversion to grayscale complete') # signals that its done as per requirement
     grayFrames.put(DELIMITER)
+
+def displayFrames(frames):
+    if frames is None:
+        raise TypeError
+
+    count = 0 # initialize frame count
+
+    frame = frames.obtain()
+
+    while frame is not DELIMITER:
+        print(f'Displaying frame {count}')
+
+        # display the image in a window call "video"
+        cv2.imshow('Video Play', frame)
+
+        # wait 42ms (what was used in the demos) and check if the user wants to quit
+        if cv2.waitKey(FRAMEDELAY) and 0xFF == ord("q"):
+            break
+
+        count += 1
+        frame = frames.obtain()
+
+    print('Finished displaying all the frames') # signals that its done as per requirement
+    cv2.destroyAllWindows() # cleanup windows
 
 if __name__ == "__main__":
 
@@ -93,6 +118,9 @@ if __name__ == "__main__":
     # and display frames at original framerate (24fps)
     extract = threading.Thread(target = extractFrames, args = (VIDEOFILE, colorFrames))
     convert = threading.Thread(target = convertGrayscale, args = (colorFrames, grayFrames))
+    display = threading.Thread(target = displayFrames, args = (grayFrames,)) # <- needed to suppress error
 
+    # start threads
     extract.start()
     convert.start()
+    display.start()
